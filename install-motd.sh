@@ -30,7 +30,7 @@ echo "⏳ Uptime...............: $(uptime -p | sed 's/up //')"
 CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo | cut -d ':' -f2 | sed 's/^ //')
 echo "🖥️ CPU Model............: $CPU_MODEL"
 
-# CPU Usage (через vmstat — часть procps, уже установлен)
+# CPU Usage
 CPU_IDLE=$(vmstat 1 2 | tail -1 | awk '{print $15}')
 CPU_USAGE=$((100 - CPU_IDLE))
 echo "⚡️ CPU Usage............: ${CPU_USAGE}%"
@@ -97,4 +97,7 @@ chmod +x /etc/update-motd.d/00-remnawave
 rm -f /etc/motd
 ln -sf /var/run/motd /etc/motd
 
-echo "✅ MOTD установлен и будет отображаться при входе в систему."
+# Создаём ручную команду
+ln -sf /etc/update-motd.d/00-remnawave /usr/local/bin/rw-motd
+
+echo "✅ MOTD установлен. Используй команду 'rw-motd' для ручного вызова."
