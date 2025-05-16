@@ -5,8 +5,8 @@ set -e
 echo "Updating package lists..."
 apt-get update -qq
 
-echo "Installing toilet and dependencies..."
-apt-get install -y toilet figlet > /dev/null
+echo "Installing required packages..."
+apt-get install -y toilet figlet procps lsb-release > /dev/null
 
 echo "Installing custom MOTD..."
 
@@ -30,25 +30,9 @@ echo "⏳ Uptime...............: $(uptime -p | sed 's/up //')"
 CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo | cut -d ':' -f2 | sed 's/^ //')
 echo "🖥️ CPU Model............: $CPU_MODEL"
 
-# CPU Usage без top
-CPU=($(head -n1 /proc/stat))
-unset CPU[0]
-IDLE1=${CPU[3]}
-TOTAL1=0
-for VALUE in "${CPU[@]}"; do
-  TOTAL1=$((TOTAL1 + VALUE))
-done
-sleep 1
-CPU=($(head -n1 /proc/stat))
-unset CPU[0]
-IDLE2=${CPU[3]}
-TOTAL2=0
-for VALUE in "${CPU[@]}"; do
-  TOTAL2=$((TOTAL2 + VALUE))
-done
-IDLE=$((IDLE2 - IDLE1))
-TOTAL=$((TOTAL2 - TOTAL1))
-CPU_USAGE=$((100 * (TOTAL - IDLE) / TOTAL))
+# CPU Usage (через vmstat — часть procps, уже установлен)
+CPU_IDLE=$(vmstat 1 2 | tail -1 | awk '{print $15}')
+CPU_USAGE=$((100 - CPU_IDLE))
 echo "⚡️ CPU Usage............: ${CPU_USAGE}%"
 
 echo "📈 Load Average.........: $(cat /proc/loadavg | awk '{print $1 " / " $2 " / " $3}')"
@@ -109,7 +93,8 @@ EOF
 
 chmod +x /etc/update-motd.d/00-remnawave
 
+# Обеспечим обновление MOTD
 rm -f /etc/motd
 ln -sf /var/run/motd /etc/motd
 
-echo "✅ MOTD installed successfully!"
+echo "✅ MOTD установлен и будет отображаться при входе в систему."
