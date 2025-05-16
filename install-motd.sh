@@ -22,12 +22,12 @@ echo
 LAST_LOGIN=$(last -n 1 $(whoami) | head -1)
 LAST_DATE=$(echo "$LAST_LOGIN" | awk '{print $4, $5, $6, $7}')
 LAST_IP=$(echo "$LAST_LOGIN" | awk '{print $3}')
-echo "🔑 Last login............: $LAST_DATE from IP $LAST_IP"
-echo "👤 User..................: $(whoami)"
-echo "⏳ Uptime................: $(uptime -p | sed 's/up //')"
+echo "🔑 Last login...........: $LAST_DATE from IP $LAST_IP"
+echo "👤 User.................: $(whoami)"
+echo "⏳ Uptime...............: $(uptime -p | sed 's/up //')"
 
 CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo | cut -d ':' -f2 | sed 's/^ //')
-echo "🖥️ CPU Model.............: $CPU_MODEL"
+echo "🖥️ CPU Model............: $CPU_MODEL"
 
 CPU_USAGE=$(top -bn2 | grep "Cpu(s)" | tail -n1 | awk -F'id,' '{split($1, vs, ","); v=vs[length(vs)]; sub("%", "", v); print 100 - v}')
 echo "⚡️ CPU Usage............: ${CPU_USAGE}%"
@@ -67,21 +67,21 @@ fi
 if command -v ufw &>/dev/null; then
     UFW_STATUS=$(ufw status | head -1)
     UFW_RULES=$(ufw status numbered | grep -c '\[')
-    echo "🛡️ Firewall (UFW)......: $UFW_STATUS, Rules: $UFW_RULES"
+    echo "🛡️ Firewall (UFW).......: $UFW_STATUS, Rules: $UFW_RULES"
 else
-    echo "🛡️ Firewall (UFW)......: not installed"
+    echo "🛡️ Firewall (UFW).......: not installed"
 fi
 
 if command -v docker &>/dev/null; then
   RUNNING_CONTAINERS=$(docker ps -q | wc -l)
   TOTAL_CONTAINERS=$(docker ps -a -q | wc -l)
-  echo "🐳 Docker containers.....: $RUNNING_CONTAINERS / $TOTAL_CONTAINERS running"
+  echo "🐳 Docker containers....: $RUNNING_CONTAINERS / $TOTAL_CONTAINERS running"
   if [ "$RUNNING_CONTAINERS" -gt 0 ]; then
     echo "  Running container list:"
     docker ps --format "    • {{.Names}}"
   fi
 else
-  echo "🐳 Docker................: not installed"
+  echo "🐳 Docker...............: not installed"
 fi
 
 echo
