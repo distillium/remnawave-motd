@@ -14,22 +14,41 @@ mkdir -p /etc/update-motd.d
 
 cat << 'EOF' > /etc/update-motd.d/00-remnawave
 #!/bin/bash
-clear
 echo -e "\e[1;37m"
 toilet -f standard -F metal "remnawave"
 echo
 
-LAST_LOGIN=$(last -n 1 $(whoami) | head -1)
+# Последний вход (исключая текущую сессию)
+LAST_LOGIN=$(last -i -w $(whoami) | grep -v "still logged in" | grep -v "0.0.0.0" | grep -v "127.0.0.1" | sed -n 2p)
 LAST_DATE=$(echo "$LAST_LOGIN" | awk '{print $4, $5, $6, $7}')
 LAST_IP=$(echo "$LAST_LOGIN" | awk '{print $3}')
 echo "🔑 Last login...........: $LAST_DATE from IP $LAST_IP"
+
 echo "👤 User.................: $(whoami)"
 echo "⏳ Uptime...............: $(uptime -p | sed 's/up //')"
 
 CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo | cut -d ':' -f2 | sed 's/^ //')
 echo "🖥️ CPU Model............: $CPU_MODEL"
 
-CPU_USAGE=$(top -bn2 | grep "Cpu(s)" | tail -n1 | awk -F'id,' '{split($1, vs, ","); v=vs[length(vs)]; sub("%", "", v); print 100 - v}')
+# CPU Usage без top
+CPU=($(head -n1 /proc/stat))
+unset CPU[0]
+IDLE1=${CPU[3]}
+TOTAL1=0
+for VALUE in "${CPU[@]}"; do
+  TOTAL1=$((TOTAL1 + VALUE))
+done
+sleep 1
+CPU=($(head -n1 /proc/stat))
+unset CPU[0]
+IDLE2=${CPU[3]}
+TOTAL2=0
+for VALUE in "${CPU[@]}"; do
+  TOTAL2=$((TOTAL2 + VALUE))
+done
+IDLE=$((IDLE2 - IDLE1))
+TOTAL=$((TOTAL2 - TOTAL1))
+CPU_USAGE=$((100 * (TOTAL - IDLE) / TOTAL))
 echo "⚡️ CPU Usage............: ${CPU_USAGE}%"
 
 echo "📈 Load Average.........: $(cat /proc/loadavg | awk '{print $1 " / " $2 " / " $3}')"
@@ -39,7 +58,7 @@ echo "💾 Disk.................: $(df -h / | awk 'NR==2{print "Used: " $3 " | F
 echo "🖥 Hostname.............: $(hostname)"
 echo "🧬 OS...................: $(lsb_release -ds 2>/dev/null || grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '\"')"
 
-# Network traffic for primary interface
+# Network traffic
 NET_IFACE=$(ip route get 8.8.8.8 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')
 if [ -n "$NET_IFACE" ]; then
     RX_BYTES=$(cat /sys/class/net/$NET_IFACE/statistics/rx_bytes)
@@ -72,6 +91,7 @@ else
     echo "🛡️ Firewall (UFW).......: not installed"
 fi
 
+# Docker info
 if command -v docker &>/dev/null; then
   RUNNING_CONTAINERS=$(docker ps -q | wc -l)
   TOTAL_CONTAINERS=$(docker ps -a -q | wc -l)
